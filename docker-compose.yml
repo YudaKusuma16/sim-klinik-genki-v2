@@ -1,0 +1,68 @@
+services:
+  backend:
+    build:
+      context: ./simklinik-backend
+    container_name: simklinik_backend
+    ports:
+      - "8096:80"
+    volumes:
+      - ./simklinik-backend:/var/www/html
+      - ./simklinik-frontend:/var/www/frontend
+    depends_on:
+      - db
+      - redis
+      - mailpit
+
+  frontend:
+    build:
+      context: ./simklinik-frontend
+    container_name: simklinik_frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./simklinik-frontend:/app
+      - ./simklinik-backend:/simklinik-backend
+      - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0
+
+  db:
+    image: mariadb:10.11
+    container_name: simklinik_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: sim_klinik
+      MYSQL_USER: simklinik
+      MYSQL_PASSWORD: simklinik123
+    ports:
+      - "3319:3306"
+    volumes:
+      - simklinik_db_data:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: simklinik_phpmyadmin
+    ports:
+      - "8097:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      UPLOAD_LIMIT: 128M
+    depends_on:
+      - db
+
+  redis:
+    image: redis:alpine
+    container_name: simklinik_redis
+    ports:
+      - "6385:6379"
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: simklinik_mailpit
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+
+volumes:
+  simklinik_db_data:
